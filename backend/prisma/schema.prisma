@@ -1,0 +1,326 @@
+// https://www.prisma.io/docs/concepts/components/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  MENTOR
+  ADMIN
+}
+
+enum ScrapeJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum PipelineJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum ScrapeSourceType {
+  JOSAA
+  CSAB
+  NIRF
+  GOVERNMENT_PORTAL
+  COLLEGE_WEBSITE
+  PLACEMENT_REPORT
+}
+
+enum IngestionFileFormat {
+  CSV
+  XLSX
+  PDF
+  JSON
+  XML
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String?
+  googleId      String?   @unique
+  name          String?
+  avatarUrl     String?
+  role          UserRole  @default(USER)
+  emailVerified Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  refreshTokens     RefreshToken[]
+  reviews           Review[]
+  comparisonHistory ComparisonHistory[]
+  mentorProfile     MentorProfile?
+  aiPredictions     AIPrediction[]
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model College {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  city      String?
+  state     String?
+  country   String   @default("IN")
+  website   String?
+  type      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  branches      Branch[]
+  cutoffs       Cutoff[]
+  placements    Placement[]
+  reviews       Review[]
+  aiPredictions AIPrediction[]
+}
+
+model Branch {
+  id        String   @id @default(cuid())
+  collegeId String
+  college   College  @relation(fields: [collegeId], references: [id], onDelete: Cascade)
+  name      String
+  code      String?
+  degree    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cutoffs Cutoff[]
+
+  @@unique([collegeId, code])
+  @@index([collegeId])
+}
+
+model Cutoff {
+  id          String   @id @default(cuid())
+  collegeId   String
+  college     College  @relation(fields: [collegeId], references: [id], onDelete: Cascade)
+  branchId    String?
+  branch      Branch?  @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  year        Int
+  exam        String
+  category    String
+  round       String?
+  openingRank Int?
+  closingRank Int?
+  createdAt   DateTime @default(now())
+
+  @@index([collegeId, year])
+  @@index([branchId])
+  @@index([year, category])
+}
+
+model Placement {
+  id             String   @id @default(cuid())
+  collegeId      String
+  college        College  @relation(fields: [collegeId], references: [id], onDelete: Cascade)
+  year           Int
+  company        String?
+  role           String?
+  highestPackage Decimal? @db.Decimal(12, 2)
+  averagePackage Decimal? @db.Decimal(12, 2)
+  medianPackage  Decimal? @db.Decimal(12, 2)
+  offers         Int?
+  createdAt      DateTime @default(now())
+
+  @@index([collegeId, year])
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  collegeId  String
+  college    College  @relation(fields: [collegeId], references: [id], onDelete: Cascade)
+  rating     Int
+  title      String?
+  body       String
+  isVerified Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([collegeId])
+  @@index([userId])
+}
+
+model ComparisonHistory {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  collegeIds String[]
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+}
+
+model MentorProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  headline    String?
+  bio         String?
+  yearsExp    Int?
+  specialties String[]
+  hourlyRate  Decimal? @db.Decimal(10, 2)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AIPrediction {
+  id           String   @id @default(cuid())
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  collegeId    String?
+  college      College? @relation(fields: [collegeId], references: [id], onDelete: SetNull)
+  modelName    String
+  modelVersion String
+  input        Json
+  output       Json
+  confidence   Float?
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([collegeId])
+}
+
+model ScrapedDataset {
+  id            String          @id @default(cuid())
+  sourceName    String
+  sourceUrl     String?
+  schemaVersion String
+  recordCount   Int?
+  rawPayload    Json?
+  storageUri    String?
+  status        ScrapeJobStatus @default(PENDING)
+  errorMessage  String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([sourceName])
+}
+
+model GovernmentDataset {
+  id           String    @id @default(cuid())
+  agency       String
+  externalId   String?
+  title        String
+  description  String?
+  license      String?
+  lastSyncedAt DateTime?
+  metadata     Json?
+  snapshot     Json?
+
+  @@unique([agency, externalId])
+  @@index([agency])
+}
+
+model CounselingStrategy {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  summary   String?
+  body      String
+  audience  String?
+  published Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([published, sortOrder])
+}
+
+model ScrapeJob {
+  id              String             @id @default(cuid())
+  sourceType      ScrapeSourceType
+  targetUrl       String?
+  status          PipelineJobStatus  @default(PENDING)
+  attemptCount    Int                @default(0)
+  maxAttempts     Int                @default(3)
+  bullJobId       String?
+  errorMessage    String?
+  metadata        Json?
+  htmlSnapshotUri String?
+  resultPayload   Json?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  logs ScrapingLog[]
+
+  @@index([sourceType, status])
+  @@index([createdAt])
+}
+
+model ScrapingLog {
+  id          String    @id @default(cuid())
+  scrapeJobId String
+  scrapeJob   ScrapeJob @relation(fields: [scrapeJobId], references: [id], onDelete: Cascade)
+  level       String
+  message     String
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+
+  @@index([scrapeJobId, createdAt])
+}
+
+model IngestionJob {
+  id            String              @id @default(cuid())
+  agency        String
+  format        IngestionFileFormat
+  sourceUri     String
+  status        PipelineJobStatus   @default(PENDING)
+  bullJobId     String?
+  recordCount   Int?
+  errorMessage  String?
+  metadata      Json?
+  startedAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  stagedRows IngestionStagedRow[]
+
+  @@index([agency, status])
+  @@index([createdAt])
+}
+
+model IngestionStagedRow {
+  id               String       @id @default(cuid())
+  ingestionJobId   String
+  ingestionJob     IngestionJob @relation(fields: [ingestionJobId], references: [id], onDelete: Cascade)
+  fingerprint      String
+  entityType       String
+  normalized       Json
+  validationErrors Json?
+  mappedCollegeId  String?
+  createdAt        DateTime     @default(now())
+
+  @@unique([ingestionJobId, fingerprint])
+  @@index([fingerprint])
+  @@index([entityType])
+}
