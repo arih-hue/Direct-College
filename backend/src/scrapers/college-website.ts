@@ -1,5 +1,6 @@
 import { fetchRenderedHtml } from "./browser.js";
 import { extractBasicMetadata } from "./cheerioExtract.js";
+import { fetchWithPolicy } from "./http.js";
 import type { ScraperFn } from "./types.js";
 
 export const scrapeCollegeWebsite: ScraperFn = async (ctx) => {
@@ -10,13 +11,23 @@ export const scrapeCollegeWebsite: ScraperFn = async (ctx) => {
   await ctx.log("info", `College site: fetching ${url}`);
   try {
     const html = await fetchRenderedHtml(url);
-    return { ...extractBasicMetadata(html, url), meta: { kind: "college" } };
+    const snapshotUri = ctx.storeSnapshot ? await ctx.storeSnapshot(html, "html") : null;
+    return {
+      ...extractBasicMetadata(html, url),
+      ...(snapshotUri ? { htmlSnapshotUri: snapshotUri } : {}),
+      meta: { kind: "college" },
+    };
   } catch (err) {
     await ctx.log("warn", "College site: Puppeteer failed, trying static fetch", {
       message: err instanceof Error ? err.message : String(err),
     });
-    const res = await fetch(url, { signal: AbortSignal.timeout(45_000) });
+    const res = await fetchWithPolicy(url);
     const html = await res.text();
-    return { ...extractBasicMetadata(html, url), meta: { kind: "college", fallback: "fetch" } };
+    const snapshotUri = ctx.storeSnapshot ? await ctx.storeSnapshot(html, "html") : null;
+    return {
+      ...extractBasicMetadata(html, url),
+      ...(snapshotUri ? { htmlSnapshotUri: snapshotUri } : {}),
+      meta: { kind: "college", fallback: "fetch" },
+    };
   }
 };

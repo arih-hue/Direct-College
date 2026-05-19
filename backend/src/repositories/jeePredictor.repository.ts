@@ -32,14 +32,10 @@ export const jeePredictorRepository = {
       return [];
     }
 
-    const branchPredicates = branchPreferences.map(
-      (pref) =>
-        Prisma.sql`(b.name ILIKE ${"%" + pref + "%"} OR COALESCE(b.code, '') ILIKE ${"%" + pref + "%"})`,
-    );
-    const branchWhere =
-      branchPredicates.length === 1
-        ? branchPredicates[0]
-        : Prisma.join(branchPredicates, " OR ");
+    /** Single `EXISTS` over `unnest` keeps the planner from exploding OR branches. */
+    const prefArray = Prisma.sql`ARRAY[${Prisma.join(
+      branchPreferences.map((p) => Prisma.sql`${p}`),
+    )}]::text[]`;
 
     const rows = await prisma.$queryRaw<JeeCutoffAggregateRow[]>`
       SELECT
@@ -50,12 +46,16 @@ export const jeePredictorRepository = {
         MAX(c."closingRank")::int AS "bestClosing"
       FROM "Cutoff" c
       INNER JOIN "College" col ON col.id = c."collegeId"
-      LEFT JOIN "Branch" b ON b.id = c."branchId"
+      INNER JOIN "Branch" b ON b.id = c."branchId"
       WHERE c."year" = ${year}
-        AND LOWER(c.category) = ${normalizedCategory}
+        AND LOWER(TRIM(c.category)) = ${normalizedCategory}
         AND c."closingRank" IS NOT NULL
-        AND b.id IS NOT NULL
-        AND (${branchWhere})
+        AND EXISTS (
+          SELECT 1
+          FROM unnest(${prefArray}) AS pref(token)
+          WHERE b.name ILIKE ('%' || token || '%')
+             OR COALESCE(b.code, '') ILIKE ('%' || token || '%')
+        )
       GROUP BY col.id, col.name, col.slug, col.state
       HAVING MAX(c."closingRank") IS NOT NULL
       ORDER BY "bestClosing" DESC

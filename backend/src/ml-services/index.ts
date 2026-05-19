@@ -1,2 +1,2 @@
-export { mlGatewayPost } from "./mlGateway.js";
+export { mlGatewayPost, mlGatewayRequest } from "./mlGateway.js";
 export { runAdmissionStub } from "./predictions.js";

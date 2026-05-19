@@ -1,11 +1,7 @@
-/**
- * Ethical scraping utilities (robots.txt, rate limits, attribution). Implement per source.
- */
-export type ScrapeContext = {
-  sourceName: string;
-  sourceUrl: string;
-};
-
-export async function noopScrape(_ctx: ScrapeContext): Promise<void> {
-  await Promise.resolve();
-}
+export { getScraper } from "./registry.js";
+export type { ScrapeContext, ScrapeResult, ScraperFn } from "./types.js";
+export { fetchWithPolicy } from "./http.js";
+export { assertUrlAllowedByRobots, isUrlAllowedByRobots } from "./robots.js";
+export { waitForHostRateLimit } from "./rateLimit.js";
+export { saveScrapeSnapshot, saveScrapeBinarySnapshot } from "./snapshotStore.js";
+export { fetchRenderedHtml, getBrowser, closeBrowser } from "./browser.js";

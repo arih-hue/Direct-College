@@ -38,4 +38,16 @@ export async function registerRepeatableJobs(): Promise<void> {
       jobId: "repeat-csab-daily",
     },
   );
+
+  await scraping.add(
+    "scheduled-gov-portals",
+    {
+      sourceType: "GOVERNMENT_PORTAL",
+      targetUrl: "https://data.gov.in/",
+    },
+    {
+      repeat: { pattern: "0 2 * * 0" },
+      jobId: "repeat-gov-portal-weekly",
+    },
+  );
 }

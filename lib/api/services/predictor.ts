@@ -10,6 +10,8 @@ export type JeeCollegePrediction = {
   bestClosingRank: number;
   effectiveClosingRank: number;
   bucket: "SAFE" | "MODERATE" | "DREAM";
+  admissionScore: number;
+  predictionRank: number;
 };
 
 export type JeePredictResponse = {

@@ -49,4 +49,16 @@ export const collegeRepository = {
     if (bySlug) return bySlug;
     return prisma.college.findUnique({ where: { id: identifier } });
   },
+
+  async create(data: Prisma.CollegeCreateInput) {
+    return prisma.college.create({ data });
+  },
+
+  async update(id: string, data: Prisma.CollegeUpdateInput) {
+    return prisma.college.update({ where: { id }, data });
+  },
+
+  async delete(id: string) {
+    return prisma.college.delete({ where: { id } });
+  },
 };

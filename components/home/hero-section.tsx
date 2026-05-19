@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion, useScroll, useTransform, useSpring } from 'framer-motion'
 import { Search, ChevronDown, Sparkles, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -23,6 +23,19 @@ export function HeroSection() {
   const [rank, setRank] = useState('')
   const sectionRef = useRef<HTMLElement>(null)
   const formRef = useRef<HTMLDivElement>(null)
+  const [particles, setParticles] = useState<{ left: string; top: string; translateZ: string; duration: number; delay: number }[]>([])
+
+  useEffect(() => {
+    setParticles(
+      [...Array(15)].map(() => ({
+        left: `${10 + Math.random() * 80}%`,
+        top: `${10 + Math.random() * 80}%`,
+        translateZ: `translateZ(${Math.random() * 100}px)`,
+        duration: 5 + Math.random() * 5,
+        delay: Math.random() * 5,
+      }))
+    )
+  }, [])
   
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -101,23 +114,23 @@ export function HeroSection() {
         />
 
         {/* Floating particles */}
-        {[...Array(15)].map((_, i) => (
+        {particles.map((p, i) => (
           <motion.div
             key={i}
             className="absolute w-1 h-1 rounded-full bg-primary/30"
             style={{
-              left: `${10 + Math.random() * 80}%`,
-              top: `${10 + Math.random() * 80}%`,
-              transform: `translateZ(${Math.random() * 100}px)`,
+              left: p.left,
+              top: p.top,
+              transform: p.translateZ,
             }}
             animate={{
               y: [0, -100, 0],
               opacity: [0, 1, 0],
             }}
             transition={{
-              duration: 5 + Math.random() * 5,
+              duration: p.duration,
               repeat: Infinity,
-              delay: Math.random() * 5,
+              delay: p.delay,
             }}
           />
         ))}

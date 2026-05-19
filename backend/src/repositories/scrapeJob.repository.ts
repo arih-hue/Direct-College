@@ -43,4 +43,49 @@ export const scrapeJobRepository = {
       },
     });
   },
+
+  async list(params: { take: number; skip: number; sourceType?: import("@prisma/client").ScrapeSourceType; status?: import("@prisma/client").PipelineJobStatus }) {
+    const where: Prisma.ScrapeJobWhereInput = {};
+    if (params.sourceType) where.sourceType = params.sourceType;
+    if (params.status) where.status = params.status;
+
+    const [items, total] = await Promise.all([
+      prisma.scrapeJob.findMany({
+        where,
+        take: params.take,
+        skip: params.skip,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          sourceType: true,
+          targetUrl: true,
+          status: true,
+          attemptCount: true,
+          errorMessage: true,
+          htmlSnapshotUri: true,
+          bullJobId: true,
+          startedAt: true,
+          completedAt: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      }),
+      prisma.scrapeJob.count({ where }),
+    ]);
+    return { items, total };
+  },
+
+  async listLogs(scrapeJobId: string, take: number, skip: number) {
+    const where = { scrapeJobId };
+    const [items, total] = await Promise.all([
+      prisma.scrapingLog.findMany({
+        where,
+        take,
+        skip,
+        orderBy: { createdAt: "asc" },
+      }),
+      prisma.scrapingLog.count({ where }),
+    ]);
+    return { items, total };
+  },
 };

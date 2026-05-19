@@ -1,3 +1,4 @@
+export * from "./admin";
 export * from "./analytics";
 export * from "./auth";
 export * from "./branches";
@@ -10,4 +11,5 @@ export * from "./ml";
 export * from "./placements";
 export * from "./predictor";
 export * from "./reviews";
+export * from "./seo";
 export * from "./users";

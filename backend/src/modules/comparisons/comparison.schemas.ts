@@ -11,4 +11,9 @@ export const comparisonCreateBodySchema = z.object({
   metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
+export const comparisonPreviewQuerySchema = z.object({
+  collegeIds: z.string().min(1).transform((s) => s.split(",").map((id) => id.trim()).filter(Boolean)),
+});
+
 export type ComparisonCreateBody = z.infer<typeof comparisonCreateBodySchema>;
+export type ComparisonPreviewQuery = z.infer<typeof comparisonPreviewQuerySchema>;

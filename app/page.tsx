@@ -13,7 +13,7 @@ export default function HomePage() {
     <div className="min-h-screen relative">
       {/* Cinematic parallax background */}
       <CinematicBackground />
-      
+
       {/* Content layer */}
       <div className="relative z-10">
         <Navbar />

@@ -33,4 +33,8 @@ export const mentorRepository = {
       include: { user: { select: { id: true, name: true, avatarUrl: true } } },
     });
   },
+
+  async update(id: string, data: Prisma.MentorProfileUpdateInput) {
+    return prisma.mentorProfile.update({ where: { id }, data });
+  },
 };

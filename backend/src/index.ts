@@ -5,14 +5,16 @@ import { env } from "./config/env.js";
 import { prisma } from "./config/database.js";
 import { getRedis } from "./config/redis.js";
 
+import { logger } from "./utils/logger.js";
+
 const app = createApp();
 
 const server = app.listen(env.PORT, () => {
-  console.log(`API listening on :${String(env.PORT)} (${env.NODE_ENV})`);
+  logger.info("API listening", { port: env.PORT, env: env.NODE_ENV });
 });
 
 async function shutdown(signal: string) {
-  console.log(`Received ${signal}, shutting down…`);
+  logger.info("Shutting down", { signal });
   server.close(() => {
     console.log("HTTP server closed");
   });

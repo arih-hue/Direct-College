@@ -4,7 +4,7 @@ import { comparisonService } from "../services/comparison.service.js";
 import { AppError } from "../utils/errors.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { sendOk, sendPaginated } from "../utils/apiResponse.js";
-import type { ComparisonCreateBody, ComparisonHistoryListQuery } from "../modules/comparisons/comparison.schemas.js";
+import type { ComparisonCreateBody, ComparisonHistoryListQuery, ComparisonPreviewQuery } from "../modules/comparisons/comparison.schemas.js";
 
 export const comparisonController = {
   listMine: asyncHandler(async (req: Request, res: Response) => {
@@ -20,5 +20,13 @@ export const comparisonController = {
     const body = req.body as ComparisonCreateBody;
     const created = await comparisonService.create(req.auth?.userId, body);
     sendOk(res, created, 201);
+  }),
+
+  preview: asyncHandler(async (req: Request, res: Response) => {
+    const query = req.query as unknown as ComparisonPreviewQuery;
+    if (query.collegeIds.length < 2) {
+      throw new AppError(400, "INVALID_QUERY", "Provide at least two collegeIds.");
+    }
+    sendOk(res, await comparisonService.preview(query.collegeIds));
   }),
 };

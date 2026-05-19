@@ -9,5 +9,14 @@ export const scrapeGovernmentPortal: ScraperFn = async (ctx) => {
   }
   await ctx.log("info", `Gov portal: fetching ${url}`);
   const html = await fetchRenderedHtml(url);
-  return { ...extractBasicMetadata(html, url), meta: { kind: "government-portal" } };
+  const snapshotUri = ctx.storeSnapshot ? await ctx.storeSnapshot(html, "html") : null;
+  const meta = extractBasicMetadata(html, url);
+  return {
+    ...meta,
+    ...(snapshotUri ? { htmlSnapshotUri: snapshotUri } : {}),
+    meta: {
+      kind: "government-portal",
+      datasetLinks: meta.links?.filter((l) => /\.(csv|xlsx|pdf|json|xml)(\?|$)/i.test(l)).slice(0, 30),
+    },
+  };
 };

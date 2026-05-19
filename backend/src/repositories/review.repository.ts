@@ -38,4 +38,34 @@ export const reviewRepository = {
   async create(data: Prisma.ReviewCreateInput) {
     return prisma.review.create({ data });
   },
+
+  async findById(id: string) {
+    return prisma.review.findUnique({
+      where: { id },
+      include: { user: { select: { id: true, name: true, email: true } }, college: { select: { id: true, name: true } } },
+    });
+  },
+
+  async update(id: string, data: Prisma.ReviewUpdateInput) {
+    return prisma.review.update({ where: { id }, data });
+  },
+
+  async delete(id: string) {
+    return prisma.review.delete({ where: { id } });
+  },
+
+  async listPending(take: number, skip: number) {
+    const where: Prisma.ReviewWhereInput = { isVerified: false };
+    const [items, total] = await Promise.all([
+      prisma.review.findMany({
+        where,
+        take,
+        skip,
+        orderBy: { createdAt: "desc" },
+        include: { user: { select: { id: true, name: true } }, college: { select: { id: true, name: true } } },
+      }),
+      prisma.review.count({ where }),
+    ]);
+    return { items, total };
+  },
 };

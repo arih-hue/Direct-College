@@ -49,4 +49,39 @@ export const ingestionJobRepository = {
     });
     return result;
   },
+
+  async list(params: { take: number; skip: number; agency?: string; status?: PipelineJobStatus }) {
+    const where: Prisma.IngestionJobWhereInput = {};
+    if (params.agency) where.agency = params.agency;
+    if (params.status) where.status = params.status;
+
+    const [items, total] = await Promise.all([
+      prisma.ingestionJob.findMany({
+        where,
+        take: params.take,
+        skip: params.skip,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          agency: true,
+          format: true,
+          sourceUri: true,
+          status: true,
+          recordCount: true,
+          errorMessage: true,
+          bullJobId: true,
+          startedAt: true,
+          completedAt: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      }),
+      prisma.ingestionJob.count({ where }),
+    ]);
+    return { items, total };
+  },
+
+  async countStagedRows(ingestionJobId: string) {
+    return prisma.ingestionStagedRow.count({ where: { ingestionJobId } });
+  },
 };

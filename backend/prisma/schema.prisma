@@ -130,6 +130,8 @@ model Cutoff {
   @@index([collegeId, year])
   @@index([branchId])
   @@index([year, category])
+  /** Predictor: filter by year+category and aggregate closing ranks per college. */
+  @@index([year, category, closingRank])
 }
 
 model Placement {

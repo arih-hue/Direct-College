@@ -1,6 +1,18 @@
-/**
- * Queue producers (BullMQ, Cloud Tasks, etc.). Keep Redis connection in `src/config/redis.ts`.
- */
+export { QUEUE_NAMES, type QueueName } from "./queueNames.js";
+export { getQueue, getAllQueueNames } from "./queues.js";
+export { defaultJobOptions } from "./defaultJobOptions.js";
+export {
+  enqueueScrapeJob,
+  enqueueIngestionJob,
+  enqueueMlJob,
+  enqueueNotification,
+  enqueueAnalyticsJob,
+} from "./producers.js";
+export { registerRepeatableJobs } from "./registerRepeatableJobs.js";
+
 export async function registerDefaultQueues(): Promise<void> {
-  await Promise.resolve();
+  const { getAllQueueNames, getQueue } = await import("./queues.js");
+  for (const name of getAllQueueNames()) {
+    getQueue(name);
+  }
 }

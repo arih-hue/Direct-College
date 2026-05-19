@@ -15,7 +15,12 @@ export async function mlRecommend(payload: {
   return unwrapData<{ source: string; data: unknown }>(res.data);
 }
 
-export async function mlAnalyze(payload: { event: string; payload?: Record<string, unknown> }) {
+export async function mlAnalyze(payload: {
+  event: string;
+  payload?: Record<string, unknown>;
+  async?: boolean;
+  jobKind?: "predict" | "embed" | "batch";
+}) {
   const res = await apiClient.post<unknown>("/ml/analyze", payload);
   return unwrapData<{ source: string; data: unknown }>(res.data);
 }

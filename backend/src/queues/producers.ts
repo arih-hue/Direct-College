@@ -39,7 +39,7 @@ export async function enqueueScrapeJob(input: {
     data: {
       sourceType: input.sourceType,
       targetUrl: input.targetUrl,
-      metadata: input.metadata ?? undefined,
+      metadata: input.metadata as import("@prisma/client").Prisma.InputJsonValue | undefined,
       status: "PENDING",
     },
   });
@@ -69,7 +69,7 @@ export async function enqueueIngestionJob(input: {
       agency: input.agency,
       format: input.format,
       sourceUri: input.sourceUri,
-      metadata: input.metadata ?? undefined,
+      metadata: input.metadata as import("@prisma/client").Prisma.InputJsonValue | undefined,
       status: "PENDING",
     },
   });

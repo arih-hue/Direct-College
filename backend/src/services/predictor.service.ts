@@ -3,7 +3,13 @@ import type { Prisma } from "@prisma/client";
 import { emitEngineEvent } from "../analytics-engine/index.js";
 import { appCache, stableCacheKey } from "../config/cache.js";
 import { mlGatewayPost } from "../ml-services/mlGateway.js";
-import { applyHomeStateBonus, bucketFromClosing, type ChanceBucket } from "../predictor-engine/index.js";
+import {
+  applyHomeStateBonus,
+  assignPredictionRanks,
+  bucketFromClosing,
+  computeAdmissionScore,
+  type ChanceBucket,
+} from "../predictor-engine/index.js";
 import type { JeePredictBody, PredictorHistoryQuery } from "../modules/predictor/predictor.schemas.js";
 import { predictionRepository } from "../repositories/prediction.repository.js";
 import { jeePredictorRepository } from "../repositories/jeePredictor.repository.js";
@@ -17,6 +23,10 @@ export type JeeCollegePrediction = {
   bestClosingRank: number;
   effectiveClosingRank: number;
   bucket: ChanceBucket;
+  /** 0–100: stronger match to cutoffs vs student AIR (within-bucket sort key). */
+  admissionScore: number;
+  /** 1-based order within the bucket after ranking. */
+  predictionRank: number;
 };
 
 export type JeePredictResult = {
@@ -36,15 +46,6 @@ export type JeePredictResult = {
 
 const CACHE_TTL_SECONDS = 120;
 
-function sortColleges(list: JeeCollegePrediction[]): JeeCollegePrediction[] {
-  return [...list].sort((a, b) => {
-    if (b.effectiveClosingRank !== a.effectiveClosingRank) {
-      return b.effectiveClosingRank - a.effectiveClosingRank;
-    }
-    return a.name.localeCompare(b.name);
-  });
-}
-
 async function computeJeeBuckets(body: JeePredictBody): Promise<Omit<JeePredictResult, "meta"> & { year: number }> {
   const year = body.year ?? (await jeePredictorRepository.getLatestCutoffYear()) ?? new Date().getFullYear();
 
@@ -54,9 +55,9 @@ async function computeJeeBuckets(body: JeePredictBody): Promise<Omit<JeePredictR
     branchPreferences: body.branchPreferences,
   });
 
-  const SAFE: JeeCollegePrediction[] = [];
-  const MODERATE: JeeCollegePrediction[] = [];
-  const DREAM: JeeCollegePrediction[] = [];
+  const SAFE: Omit<JeeCollegePrediction, "predictionRank">[] = [];
+  const MODERATE: Omit<JeeCollegePrediction, "predictionRank">[] = [];
+  const DREAM: Omit<JeeCollegePrediction, "predictionRank">[] = [];
 
   for (const row of rows) {
     const adjusted = applyHomeStateBonus(row.bestClosing, row.collegeState, body.state);
@@ -65,7 +66,13 @@ async function computeJeeBuckets(body: JeePredictBody): Promise<Omit<JeePredictR
       bestClosingRank: adjusted,
     });
 
-    const item: JeeCollegePrediction = {
+    const admissionScore = computeAdmissionScore({
+      studentRank: body.rank,
+      effectiveClosingRank: adjusted,
+      bucket,
+    });
+
+    const item: Omit<JeeCollegePrediction, "predictionRank"> = {
       collegeId: row.collegeId,
       name: row.collegeName,
       slug: row.collegeSlug,
@@ -73,6 +80,7 @@ async function computeJeeBuckets(body: JeePredictBody): Promise<Omit<JeePredictR
       bestClosingRank: row.bestClosing,
       effectiveClosingRank: adjusted,
       bucket,
+      admissionScore,
     };
 
     if (bucket === "SAFE") SAFE.push(item);
@@ -82,15 +90,15 @@ async function computeJeeBuckets(body: JeePredictBody): Promise<Omit<JeePredictR
 
   return {
     year,
-    SAFE: sortColleges(SAFE),
-    MODERATE: sortColleges(MODERATE),
-    DREAM: sortColleges(DREAM),
+    SAFE: assignPredictionRanks(SAFE),
+    MODERATE: assignPredictionRanks(MODERATE),
+    DREAM: assignPredictionRanks(DREAM),
   };
 }
 
 export const predictorService = {
   async jeePredict(body: JeePredictBody, userId?: string): Promise<JeePredictResult> {
-    const cacheKey = `jee:predict:${stableCacheKey(body)}`;
+    const cacheKey = `jee:predict:v2:${stableCacheKey(body)}`;
     const cached = await appCache.get(cacheKey);
     if (cached) {
       const parsed = JSON.parse(cached) as JeePredictResult;

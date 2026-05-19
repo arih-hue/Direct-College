@@ -134,7 +134,7 @@ export default function PredictorPage() {
                 <AnimatePresence>
                   <motion.div
                     initial={false}
-                    animate={{ height: showFilters || window.innerWidth >= 1024 ? 'auto' : 0 }}
+                    animate={{ height: showFilters || (typeof window !== 'undefined' && window.innerWidth >= 1024) ? 'auto' : 0 }}
                     className={`overflow-hidden lg:!h-auto ${!showFilters && 'hidden lg:block'}`}
                   >
                     <div className="p-5 space-y-5">

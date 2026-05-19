@@ -12,11 +12,12 @@ export async function processIngestionJob(job: Job<IngestionJobPayload>): Promis
     throw new Error(`IngestionJob not found: ${ingestionJobId}`);
   }
 
-  const meta = row.metadata as { entityType?: string } | null;
+  const meta = row.metadata as { entityType?: string; commit?: boolean } | null;
 
   try {
     await runIngestionPipeline(ingestionJobId, row.format, row.sourceUri, row.agency, {
       entityType: meta?.entityType,
+      commit: meta?.commit ?? false,
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

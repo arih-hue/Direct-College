@@ -46,6 +46,9 @@ const envSchema = z.object({
     .enum(["true", "false"])
     .optional()
     .transform((v) => v === "true"),
+
+  /** Local directory for HTML/PDF scrape snapshots (defaults to `./data/scrape-snapshots`). */
+  SCRAPE_STORAGE_DIR: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -11,6 +11,12 @@ export const mlRecommendBodySchema = z.object({
 export const mlAnalyzeBodySchema = z.object({
   event: z.string().min(1).max(120),
   payload: z.record(z.string(), z.unknown()).optional(),
+  /**
+   * When true and `REDIS_URL` is set, enqueue BullMQ `ml-processing` work for async scoring / exports.
+   * Requires `npm run worker` (or equivalent) to drain the queue.
+   */
+  async: z.boolean().optional(),
+  jobKind: z.enum(["predict", "embed", "batch"]).optional(),
 });
 
 export const mlStrategyBodySchema = z.object({

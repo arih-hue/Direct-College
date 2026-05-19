@@ -5,10 +5,15 @@ import { authenticate } from "../../middlewares/auth.js";
 import { validateBody } from "../../middlewares/validateRequest.js";
 import { validateQuery } from "../../middlewares/validateQuery.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
-import { comparisonCreateBodySchema, comparisonHistoryListQuerySchema } from "./comparison.schemas.js";
+import { comparisonCreateBodySchema, comparisonHistoryListQuerySchema, comparisonPreviewQuerySchema } from "./comparison.schemas.js";
 
 export const comparisonRouter = Router();
 
+comparisonRouter.get(
+  "/preview",
+  validateQuery(comparisonPreviewQuerySchema),
+  asyncHandler(comparisonController.preview),
+);
 comparisonRouter.get(
   "/history",
   authenticate(),

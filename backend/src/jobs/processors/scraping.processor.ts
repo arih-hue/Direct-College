@@ -2,8 +2,10 @@ import type { Job } from "bullmq";
 
 import { prisma } from "../../config/database.js";
 import type { ScrapingJobPayload } from "../../queues/producers.js";
+import { enqueueIngestionJob } from "../../queues/producers.js";
 import { scrapeJobRepository } from "../../repositories/scrapeJob.repository.js";
 import { getScraper } from "../../scrapers/registry.js";
+import { saveScrapeSnapshot } from "../../scrapers/snapshotStore.js";
 
 async function resolveScrapeJobId(job: Job<ScrapingJobPayload>): Promise<string> {
   const d = job.data;
@@ -15,7 +17,7 @@ async function resolveScrapeJobId(job: Job<ScrapingJobPayload>): Promise<string>
       data: {
         sourceType: d.sourceType,
         targetUrl: d.targetUrl,
-        metadata: d.metadata ?? undefined,
+        metadata: d.metadata as import("@prisma/client").Prisma.InputJsonValue | undefined,
         status: "PENDING",
         bullJobId: typeof job.id === "string" ? job.id : String(job.id),
       },
@@ -35,7 +37,7 @@ export async function processScrapingJob(job: Job<ScrapingJobPayload>): Promise<
   const maxAttempts = job.opts.attempts ?? 5;
 
   const log = async (level: string, message: string, metadata?: Record<string, unknown>) => {
-    await scrapeJobRepository.log(scrapeJobId, level, message, metadata);
+    await scrapeJobRepository.log(scrapeJobId, level, message, metadata as import("@prisma/client").Prisma.InputJsonValue | undefined);
   };
 
   await scrapeJobRepository.updateStatus(scrapeJobId, {
@@ -50,7 +52,13 @@ export async function processScrapingJob(job: Job<ScrapingJobPayload>): Promise<
     const result = await scraper({
       sourceType: row.sourceType,
       targetUrl: row.targetUrl,
+      scrapeJobId,
       log,
+      storeSnapshot: async (content, ext = "html") => {
+        const uri = await saveScrapeSnapshot(scrapeJobId, content, ext);
+        await scrapeJobRepository.updateStatus(scrapeJobId, { status: "RUNNING", htmlSnapshotUri: uri });
+        return uri;
+      },
     });
 
     await scrapeJobRepository.updateStatus(scrapeJobId, {
@@ -58,8 +66,24 @@ export async function processScrapingJob(job: Job<ScrapingJobPayload>): Promise<
       resultPayload: result as unknown as import("@prisma/client").Prisma.InputJsonValue,
       completedAt: new Date(),
       errorMessage: null,
+      ...(result.htmlSnapshotUri ? { htmlSnapshotUri: result.htmlSnapshotUri } : {}),
     });
     await log("info", "Scrape job completed", { attempts: job.attemptsMade });
+
+    if (result.ingestionFollowUp) {
+      const follow = result.ingestionFollowUp;
+      const enqueued = await enqueueIngestionJob({
+        agency: follow.agency,
+        format: follow.format,
+        sourceUri: follow.sourceUri,
+        metadata: {
+          entityType: follow.entityType ?? "placement",
+          commit: false,
+          sourceScrapeJobId: scrapeJobId,
+        },
+      });
+      await log("info", "Follow-up ingestion job enqueued", enqueued);
+    }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     await log("error", msg, { attempt: job.attemptsMade });
