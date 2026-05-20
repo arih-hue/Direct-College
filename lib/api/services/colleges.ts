@@ -24,3 +24,17 @@ export async function getCollege(identifier: string) {
   const res = await apiClient.get<unknown>(`/colleges/${encodeURIComponent(identifier)}`);
   return unwrapData<CollegeListItem & Record<string, unknown>>(res.data);
 }
+import { supabase } from '@/lib/supabase'
+
+export async function getColleges() {
+  const { data, error } = await supabase
+    .from('colleges')
+    .select('*')
+
+  if (error) {
+    console.error(error)
+    return []
+  }
+
+  return data
+}

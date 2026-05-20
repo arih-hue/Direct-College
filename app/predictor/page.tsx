@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  Search, 
-  Filter, 
+import {
+  Search,
+  Filter,
   SlidersHorizontal,
   Plus,
   Heart,
@@ -25,7 +25,7 @@ import {
 import { GlassCard } from '@/components/ui/glass-card'
 import { CollegeCard } from '@/components/cards/college-card'
 import { ChanceBadge } from '@/components/ui/chance-badge'
-import { colleges, branches } from '@/data/mock'
+import { getColleges } from '@/lib/api/services/colleges'
 import type { College } from '@/types'
 
 const categories = ['General', 'OBC-NCL', 'SC', 'ST', 'EWS', 'PwD']
@@ -39,7 +39,7 @@ const generatePredictions = (rank: number): { college: College; chance: 'SAFE' |
   return colleges.map((college) => {
     const baseRank = college.ranking * 1000 + Math.random() * 2000
     let chance: 'SAFE' | 'MODERATE' | 'DREAM'
-    
+
     if (rank < baseRank * 0.7) {
       chance = 'SAFE'
     } else if (rank < baseRank) {
@@ -47,7 +47,7 @@ const generatePredictions = (rank: number): { college: College; chance: 'SAFE' |
     } else {
       chance = 'DREAM'
     }
-    
+
     return {
       college,
       chance,
@@ -67,7 +67,13 @@ export default function PredictorPage() {
   const [examType, setExamType] = useState('JEE Main')
   const [collegeType, setCollegeType] = useState('All')
   const [showFilters, setShowFilters] = useState(false)
-  const [predictions, setPredictions] = useState(generatePredictions(8500))
+  const [predictions, setPredictions] = useState<ReturnType<typeof generatePredictions>>([])
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    setPredictions(generatePredictions(8500))
+  }, [])
 
   const handlePredict = () => {
     setPredictions(generatePredictions(parseInt(rank) || 8500))
@@ -87,7 +93,7 @@ export default function PredictorPage() {
   return (
     <main className="min-h-screen">
       <Navbar />
-      
+
       <div className="pt-20 pb-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Header */}
@@ -134,7 +140,7 @@ export default function PredictorPage() {
                 <AnimatePresence>
                   <motion.div
                     initial={false}
-                    animate={{ height: showFilters || (typeof window !== 'undefined' && window.innerWidth >= 1024) ? 'auto' : 0 }}
+                    animate={{ height: showFilters || (mounted && window.innerWidth >= 1024) ? 'auto' : 0 }}
                     className={`overflow-hidden lg:!h-auto ${!showFilters && 'hidden lg:block'}`}
                   >
                     <div className="p-5 space-y-5">
@@ -148,11 +154,10 @@ export default function PredictorPage() {
                             <button
                               key={type}
                               onClick={() => setExamType(type)}
-                              className={`flex-1 px-4 py-2.5 text-sm rounded-xl border transition-all ${
-                                examType === type
+                              className={`flex-1 px-4 py-2.5 text-sm rounded-xl border transition-all ${examType === type
                                   ? 'bg-primary text-primary-foreground border-primary'
                                   : 'bg-secondary/50 border-border/50 text-muted-foreground hover:text-foreground'
-                              }`}
+                                }`}
                             >
                               {type}
                             </button>
@@ -248,7 +253,7 @@ export default function PredictorPage() {
                       </div>
 
                       {/* Predict Button */}
-                      <Button 
+                      <Button
                         onClick={handlePredict}
                         className="w-full h-12 bg-gradient-to-r from-primary to-accent hover:opacity-90"
                       >
@@ -296,18 +301,17 @@ export default function PredictorPage() {
                     Showing {filterPredictions.length} colleges for rank #{rank}
                   </p>
                 </div>
-                
+
                 {/* College Type Filter */}
                 <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0">
                   {collegeTypes.map((type) => (
                     <button
                       key={type}
                       onClick={() => setCollegeType(type)}
-                      className={`px-4 py-2 text-sm rounded-full whitespace-nowrap transition-all ${
-                        collegeType === type
+                      className={`px-4 py-2 text-sm rounded-full whitespace-nowrap transition-all ${collegeType === type
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-secondary/50 text-muted-foreground hover:text-foreground'
-                      }`}
+                        }`}
                     >
                       {type}
                     </button>
@@ -346,7 +350,7 @@ export default function PredictorPage() {
           </div>
         </div>
       </div>
-      
+
       <Footer />
     </main>
   )
