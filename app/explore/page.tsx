@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Search, 
@@ -21,10 +21,10 @@ import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { GlassCard } from '@/components/ui/glass-card'
 import { CollegeCard } from '@/components/cards/college-card'
-import { colleges } from '@/data/mock'
+import { getColleges } from '@/lib/api/services/colleges'
+import type { College } from '@/types'
 
 const collegeTypes = ['IIT', 'NIT', 'IIIT', 'GFTI', 'State']
-const branchCategories = ['CS', 'ECE', 'EE', 'ME', 'CE', 'CH']
 const states = ['Maharashtra', 'Delhi', 'Karnataka', 'Tamil Nadu', 'Telangana', 'Gujarat', 'Rajasthan', 'UP', 'MP', 'West Bengal']
 const feeRanges = [
   { label: 'Under 5L', min: 0, max: 500000 },
@@ -38,12 +38,9 @@ const placementRanges = [
   { label: '70% - 80%', min: 70, max: 80 },
 ]
 
-interface FilterSection {
-  title: string
-  isOpen: boolean
-}
-
 export default function ExplorePage() {
+  const [colleges, setColleges] = useState<College[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedTypes, setSelectedTypes] = useState<string[]>([])
   const [selectedStates, setSelectedStates] = useState<string[]>([])
@@ -55,6 +52,13 @@ export default function ExplorePage() {
     fees: false,
     placement: false,
   })
+
+  useEffect(() => {
+    getColleges().then((data) => {
+      setColleges(data)
+      setLoading(false)
+    })
+  }, [])
 
   const toggleFilterSection = (key: string) => {
     setFilterSections(prev => ({ ...prev, [key]: !prev[key] }))
@@ -73,18 +77,20 @@ export default function ExplorePage() {
   }
 
   const filteredColleges = colleges.filter((college) => {
-    // Search filter
-    if (searchQuery && !college.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        !college.shortName.toLowerCase().includes(searchQuery.toLowerCase())) {
+    if (searchQuery && !college.name.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false
     }
-    // Type filter
-    if (selectedTypes.length > 0 && !selectedTypes.includes(college.type)) {
+    if (selectedTypes.length > 0 && !selectedTypes.includes(college.type ?? '')) {
       return false
     }
-    // State filter
-    if (selectedStates.length > 0 && !selectedStates.includes(college.state)) {
+    if (selectedStates.length > 0 && !selectedStates.includes(college.state ?? '')) {
       return false
+    }
+    if (selectedFeeRange) {
+      const range = feeRanges.find(r => r.label === selectedFeeRange)
+      if (range && college.fees != null) {
+        if (college.fees < range.min || college.fees > range.max) return false
+      }
     }
     return true
   })
@@ -299,7 +305,10 @@ export default function ExplorePage() {
               {/* Results Count */}
               <div className="flex items-center justify-between mb-6">
                 <p className="text-sm text-muted-foreground">
-                  Showing <span className="text-foreground font-medium">{filteredColleges.length}</span> colleges
+                  {loading
+                    ? 'Loading colleges...'
+                    : <>Showing <span className="text-foreground font-medium">{filteredColleges.length}</span> colleges</>
+                  }
                 </p>
                 {hasActiveFilters && (
                   <div className="flex items-center gap-2 flex-wrap">
@@ -327,25 +336,44 @@ export default function ExplorePage() {
                 )}
               </div>
 
-              {/* Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                <AnimatePresence mode="popLayout">
-                  {filteredColleges.map((college, index) => (
-                    <motion.div
-                      key={college.id}
-                      layout
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      transition={{ duration: 0.3, delay: index * 0.03 }}
-                    >
-                      <CollegeCard college={college} />
-                    </motion.div>
+              {/* Loading skeleton */}
+              {loading && (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="rounded-2xl border border-border/50 bg-card/50 p-5 animate-pulse">
+                      <div className="h-5 w-3/4 bg-secondary rounded mb-3" />
+                      <div className="h-4 w-1/2 bg-secondary rounded mb-4" />
+                      <div className="space-y-2">
+                        <div className="h-4 bg-secondary rounded" />
+                        <div className="h-4 bg-secondary rounded" />
+                        <div className="h-4 bg-secondary rounded" />
+                      </div>
+                    </div>
                   ))}
-                </AnimatePresence>
-              </div>
+                </div>
+              )}
 
-              {filteredColleges.length === 0 && (
+              {/* Grid */}
+              {!loading && (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  <AnimatePresence mode="popLayout">
+                    {filteredColleges.map((college, index) => (
+                      <motion.div
+                        key={college.id}
+                        layout
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ duration: 0.3, delay: index * 0.03 }}
+                      >
+                        <CollegeCard college={college} />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              )}
+
+              {!loading && filteredColleges.length === 0 && (
                 <div className="text-center py-16">
                   <Building className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-foreground">No colleges found</h3>

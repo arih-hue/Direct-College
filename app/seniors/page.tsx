@@ -25,9 +25,62 @@ import { Footer } from '@/components/layout/footer'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { GlassCard } from '@/components/ui/glass-card'
-import { seniors, colleges } from '@/data/mock'
 import { cn } from '@/lib/utils'
 import type { Senior } from '@/types'
+
+const seniors: Senior[] = [
+  {
+    id: '1',
+    name: 'Aaditya Verma',
+    college: 'IIT Bombay',
+    collegeId: 'iit-bombay',
+    branch: 'Computer Science',
+    batch: '2024',
+    company: 'Google',
+    role: 'Software Engineer',
+    bio: 'CSE graduate from IIT Bombay. Highly passionate about software development and competitive programming. Helped 300+ students with Josaa choice filling.',
+    expertise: ['Branch Selection', 'Software Placements', 'Campus Life'],
+    responseTime: 'Under 1 hr',
+    helpedCount: 312,
+    rating: 4.9,
+    isOnline: true,
+    lastSeen: new Date(),
+  },
+  {
+    id: '2',
+    name: 'Megha Singhal',
+    college: 'NIT Trichy',
+    collegeId: 'nit-trichy',
+    branch: 'Electronics & Communication',
+    batch: '2025',
+    company: 'Texas Instruments',
+    role: 'Analog Engineer',
+    bio: 'Final year ECE student at NIT Trichy. Love to guide juniors regarding NIT campus life and core engineering opportunities.',
+    expertise: ['Core Placements', 'NIT Campus Life', 'JoSAA Counseling'],
+    responseTime: 'Under 2 hrs',
+    helpedCount: 184,
+    rating: 4.8,
+    isOnline: false,
+    lastSeen: new Date(Date.now() - 3600000 * 3), // 3 hours ago
+  },
+  {
+    id: '3',
+    name: 'Rohan Deshmukh',
+    college: 'IIIT Allahabad',
+    collegeId: 'iiit-allahabad',
+    branch: 'Information Technology',
+    batch: '2023',
+    company: 'Amazon',
+    role: 'SDE-1',
+    bio: 'IIITA Alumnus. Working as a Software Engineer at Amazon. Can help you choose between NIT core branches vs IIIT IT/CS branches.',
+    expertise: ['IIIT Admissions', 'Coding Culture', 'Placements'],
+    responseTime: 'Under 4 hrs',
+    helpedCount: 254,
+    rating: 4.9,
+    isOnline: true,
+    lastSeen: new Date(),
+  }
+]
 
 const collegeFilters = ['All', 'IIT', 'NIT', 'IIIT']
 const expertiseFilters = ['All', 'Counseling', 'Placements', 'Campus Life', 'Branch Selection', 'Research']
@@ -41,7 +94,7 @@ export default function SeniorsPage() {
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<{ id: string; content: string; sender: 'user' | 'senior'; time: string }[]>([])
 
-  const filteredSeniors = seniors.filter((senior) => {
+  const filteredSeniors = seniors.filter((senior: Senior) => {
     const matchesSearch = senior.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       senior.college.toLowerCase().includes(searchQuery.toLowerCase()) ||
       senior.branch.toLowerCase().includes(searchQuery.toLowerCase())
@@ -50,7 +103,7 @@ export default function SeniorsPage() {
       senior.college.includes(selectedCollegeFilter)
     
     const matchesExpertise = selectedExpertiseFilter === 'All' ||
-      senior.expertise.some(e => e.toLowerCase().includes(selectedExpertiseFilter.toLowerCase()))
+      senior.expertise.some((e: string) => e.toLowerCase().includes(selectedExpertiseFilter.toLowerCase()))
 
     return matchesSearch && matchesCollege && matchesExpertise
   })
@@ -140,7 +193,7 @@ export default function SeniorsPage() {
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-foreground">
-                {seniors.reduce((acc, s) => acc + s.helpedCount, 0).toLocaleString()}+
+                {seniors.reduce((acc: number, s: Senior) => acc + s.helpedCount, 0).toLocaleString()}+
               </p>
               <p className="text-sm text-muted-foreground">Students Helped</p>
             </div>
@@ -217,7 +270,7 @@ export default function SeniorsPage() {
       <section className="py-8">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredSeniors.map((senior, index) => (
+            {filteredSeniors.map((senior: Senior, index: number) => (
               <motion.div
                 key={senior.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -230,7 +283,7 @@ export default function SeniorsPage() {
                     <div className="relative">
                       <div className="h-14 w-14 rounded-full bg-gradient-to-br from-primary/30 to-accent/30 flex items-center justify-center">
                         <span className="text-xl font-bold text-foreground">
-                          {senior.name.split(' ').map(n => n[0]).join('')}
+                          {senior.name.split(' ').map((n: string) => n[0]).join('')}
                         </span>
                       </div>
                       {/* Online indicator */}
@@ -265,7 +318,7 @@ export default function SeniorsPage() {
 
                   {/* Expertise Tags */}
                   <div className="flex flex-wrap gap-1.5 mb-4">
-                    {senior.expertise.slice(0, 3).map((tag) => (
+                    {senior.expertise.slice(0, 3).map((tag: string) => (
                       <span
                         key={tag}
                         className="px-2 py-1 text-xs rounded-full bg-primary/10 text-primary"

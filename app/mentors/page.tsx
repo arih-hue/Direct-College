@@ -16,8 +16,50 @@ import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
 import { Button } from '@/components/ui/button'
 import { GlassCard } from '@/components/ui/glass-card'
-import { mentors } from '@/data/mock'
 import { cn } from '@/lib/utils'
+import type { Mentor } from '@/types'
+
+const mentors: Mentor[] = [
+  {
+    id: '1',
+    name: 'Arpit Singhal',
+    college: 'IIT Bombay',
+    branch: 'Computer Science',
+    company: 'Google',
+    role: 'Software Engineer',
+    expertise: ['Branch Selection', 'JEE Preparation', 'Software Careers'],
+    sessionCount: 142,
+    rating: 4.9,
+    pricePerSession: 499,
+    availability: ['Mon, Wed 6-8 PM', 'Sat 10 AM - 1 PM']
+  },
+  {
+    id: '2',
+    name: 'Suhani Goel',
+    college: 'NIT Trichy',
+    branch: 'Electronics & Communication',
+    company: 'Qualcomm',
+    role: 'Hardware Engineer',
+    expertise: ['JoSAA Choice Filling', 'NIT Campus Life', 'Core Placements'],
+    sessionCount: 98,
+    rating: 4.8,
+    pricePerSession: 399,
+    availability: ['Tue, Thu 7-9 PM', 'Sun 2-5 PM']
+  },
+  {
+    id: '3',
+    name: 'Vikram Aditya',
+    college: 'IIIT Hyderabad',
+    branch: 'Computer Science',
+    company: 'Uber',
+    role: 'Senior Developer',
+    expertise: ['IIIT Admissions', 'Coding Culture', 'Foreign Placements'],
+    sessionCount: 215,
+    rating: 4.9,
+    pricePerSession: 599,
+    availability: ['Friday 5-8 PM', 'Sat 3-6 PM']
+  }
+]
 
 const categories = ['All', 'IIT Alumni', 'NIT Alumni', 'Industry Experts', 'Placement Experts']
 
@@ -74,7 +116,7 @@ export default function MentorsPage() {
         {/* Mentors Grid */}
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {mentors.map((mentor, index) => (
+            {mentors.map((mentor: Mentor, index: number) => (
               <motion.div
                 key={mentor.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -118,7 +160,7 @@ export default function MentorsPage() {
 
                   {/* Expertise Tags */}
                   <div className="mt-4 flex flex-wrap gap-2">
-                    {mentor.expertise.map((exp) => (
+                    {mentor.expertise.map((exp: string) => (
                       <span 
                         key={exp}
                         className="px-3 py-1 text-xs rounded-full bg-primary/10 text-primary"

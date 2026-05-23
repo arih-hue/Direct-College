@@ -1,29 +1,77 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { 
   Search, 
   Filter, 
   MessageSquare,
-  Star,
-  TrendingUp,
-  Building
+  Loader2
 } from 'lucide-react'
 import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ReviewCard } from '@/components/cards/review-card'
-import { reviews, colleges } from '@/data/mock'
 import { cn } from '@/lib/utils'
+import type { Review } from '@/types'
+import { getReviews } from '@/lib/api/services/reviews'
 
 const categories = ['All', 'IITs', 'NITs', 'IIITs', 'State']
-const sortOptions = ['Most Recent', 'Most Helpful', 'Highest Rated', 'Lowest Rated']
+
+const mockReviews: Review[] = [
+  {
+    id: 'mock-1',
+    college_id: '2b2f5358-6839-4e06-bd78-7966d6385daa',
+    user_name: 'Rahul Sharma',
+    userName: 'Rahul Sharma',
+    rating: 5,
+    title: 'NIT Trichy: Placements and Campus Life are top-tier!',
+    content: 'NIT Trichy offers an unparalleled college experience. Placements are extremely robust with almost all major tech firms recruiting here. Campus size is huge with plenty of green spaces and sports complexes.',
+    body: 'NIT Trichy offers an unparalleled college experience. Placements are extremely robust with almost all major tech firms recruiting here. Campus size is huge with plenty of green spaces and sports complexes.',
+    pros: ['Top placements', 'Large active campus', 'Strong alumni network'],
+    cons: ['Very hot climate', 'Heavy academic load'],
+    verified: true,
+    branch: 'Computer Science',
+    batch: '2024',
+    created_at: new Date('2025-05-10T12:00:00'),
+    createdAt: new Date('2025-05-10T12:00:00'),
+  },
+  {
+    id: 'mock-2',
+    college_id: '2b2f5358-6839-4e06-bd78-7966d6385daa',
+    user_name: 'Ananya Iyer',
+    userName: 'Ananya Iyer',
+    rating: 4,
+    title: 'Excellent Peer Group and Tech Culture',
+    content: 'The coding culture here is outstanding. Pragyan and Festember are highlights of the year. Hostels are decent, and mess food is manageable.',
+    body: 'The coding culture here is outstanding. Pragyan and Festember are highlights of the year. Hostels are decent, and mess food is manageable.',
+    pros: ['Outstanding coding culture', 'Excellent college fests'],
+    cons: ['Mess food could be better', 'Strict attendance rules'],
+    verified: true,
+    branch: 'Electronics & Communication',
+    batch: '2025',
+    created_at: new Date('2025-04-18T10:00:00'),
+    createdAt: new Date('2025-04-18T10:00:00'),
+  }
+]
 
 export default function ReviewsPage() {
   const [activeCategory, setActiveCategory] = useState('All')
   const [searchQuery, setSearchQuery] = useState('')
+  const [reviews, setReviews] = useState<Review[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    getReviews().then((data) => {
+      if (data && data.length > 0) {
+        setReviews(data)
+      } else {
+        setReviews(mockReviews)
+      }
+      setLoading(false)
+    })
+  }, [])
 
   // Generate more reviews for display
   const allReviews = [...reviews, ...reviews, ...reviews].map((r, i) => ({

@@ -18,7 +18,6 @@ import { Footer } from '@/components/layout/footer'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { GlassCard } from '@/components/ui/glass-card'
-import { resources } from '@/data/mock'
 import { cn } from '@/lib/utils'
 
 const categories = ['All', 'Counseling', 'Strategy', 'Preparation', 'Career']

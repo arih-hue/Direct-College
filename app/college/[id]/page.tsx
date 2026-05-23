@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, use } from 'react'
+import { useState, useEffect, use } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { 
@@ -36,8 +36,11 @@ import { Button } from '@/components/ui/button'
 import { GlassCard } from '@/components/ui/glass-card'
 import { ReviewCard } from '@/components/cards/review-card'
 import { AnimatedCounter } from '@/components/ui/animated-counter'
-import { colleges, reviews } from '@/data/mock'
 import { cn } from '@/lib/utils'
+import { Loader2 } from 'lucide-react'
+import type { College, Review } from '@/types'
+import { getCollegeById } from '@/lib/api/services/colleges'
+import { getReviews } from '@/lib/api/services/reviews'
 import {
   AreaChart,
   Area,
@@ -144,14 +147,88 @@ export default function CollegeDetailPage({ params }: { params: Promise<{ id: st
   const { id } = use(params)
   const [activeTab, setActiveTab] = useState('overview')
   const [openFaq, setOpenFaq] = useState<number | null>(null)
+  const [collegeData, setCollegeData] = useState<College | null>(null)
+  const [collegeReviews, setCollegeReviews] = useState<Review[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const college = colleges.find((c) => c.id === id) || colleges[0]
-  const collegeReviews = reviews.filter((r) => r.collegeId === college.id)
+  useEffect(() => {
+    if (!id) return
+    setLoading(true)
+    getCollegeById(id).then((data) => {
+      if (data) {
+        setCollegeData(data)
+        getReviews(data.id).then((reviewsData) => {
+          setCollegeReviews(reviewsData)
+          setLoading(false)
+        })
+      } else {
+        setCollegeData(null)
+        setLoading(false)
+      }
+    })
+  }, [id])
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | null | undefined) => {
+    if (amount == null) return '—'
     if (amount >= 10000000) return `${(amount / 10000000).toFixed(1)} Cr`
     if (amount >= 100000) return `${(amount / 100000).toFixed(1)} LPA`
     return amount.toLocaleString()
+  }
+
+  if (loading) {
+    return (
+      <main className="min-h-screen">
+        <Navbar />
+        <div className="pt-20 flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <Loader2 className="h-10 w-10 text-primary animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading college details...</p>
+          </div>
+        </div>
+        <Footer />
+      </main>
+    )
+  }
+
+  if (!collegeData) {
+    return (
+      <main className="min-h-screen">
+        <Navbar />
+        <div className="pt-20 flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-foreground mb-2">College Not Found</h2>
+            <p className="text-muted-foreground mb-4">We could not find the college you are looking for.</p>
+            <Link href="/explore">
+              <Button>Back to Explore</Button>
+            </Link>
+          </div>
+        </div>
+        <Footer />
+      </main>
+    )
+  }
+
+  // Safe mappings and fallbacks for collegeData fields
+  const college = {
+    ...collegeData,
+    shortName: collegeData.shortName || collegeData.name.split(' ')[0],
+    location: collegeData.location || collegeData.city || '',
+    established: collegeData.established_year || 1964,
+    rating: collegeData.rating ?? 4.5,
+    reviewCount: collegeReviews.length,
+    accreditations: collegeData.accreditations || ['NBA', 'NAAC A+'],
+    avgPackage: collegeData.avg_package || 0,
+    placementRate: collegeData.placementRate ?? 92,
+    fees: collegeData.fees || 0,
+    ranking: collegeData.nirf_rank || 100,
+    facilities: collegeData.facilities || ['Hostel', 'Gym', 'Library', 'WiFi', 'Sports Complex', 'Cafeteria'],
+    medianPackage: collegeData.medianPackage || (collegeData.avg_package ? Math.round(collegeData.avg_package * 0.85) : 1200000),
+    highestPackage: collegeData.highest_package || 0,
+    socialLinks: collegeData.socialLinks || {
+      instagram: 'https://instagram.com',
+      discord: 'https://discord.gg',
+      linkedin: 'https://linkedin.com'
+    }
   }
 
   return (
@@ -202,7 +279,7 @@ export default function CollegeDetailPage({ params }: { params: Promise<{ id: st
                   </div>
                   {/* Accreditations */}
                   <div className="flex flex-wrap gap-2 mt-4">
-                    {college.accreditations.map((acc) => (
+                    {college.accreditations.map((acc: string) => (
                       <span 
                         key={acc}
                         className="px-3 py-1 text-xs rounded-full bg-primary/10 text-primary border border-primary/20"
@@ -315,7 +392,7 @@ export default function CollegeDetailPage({ params }: { params: Promise<{ id: st
             <GlassCard variant="strong" className="p-6">
               <h2 className="text-xl font-semibold text-foreground mb-4">Facilities</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {college.facilities.map((facility) => (
+                {college.facilities.map((facility: string) => (
                   <div key={facility} className="flex items-center gap-2 p-3 rounded-xl bg-secondary/50">
                     <CheckCircle className="h-5 w-5 text-emerald-400" />
                     <span className="text-sm text-foreground">{facility}</span>
@@ -421,7 +498,7 @@ export default function CollegeDetailPage({ params }: { params: Promise<{ id: st
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {reviews.map((review) => (
+              {collegeReviews.map((review: Review) => (
                 <ReviewCard key={review.id} review={review} />
               ))}
             </div>

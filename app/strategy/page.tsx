@@ -19,9 +19,44 @@ import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
 import { Button } from '@/components/ui/button'
 import { GlassCard } from '@/components/ui/glass-card'
-import { deadlines } from '@/data/mock'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
+import type { Deadline } from '@/types'
+
+const deadlines: Deadline[] = [
+  {
+    id: '1',
+    name: 'JoSAA Registration Starts',
+    date: new Date('2026-06-15T10:00:00'),
+    type: 'Registration',
+    description: 'Online registration and choice filling starts for JoSAA 2026',
+    important: true,
+  },
+  {
+    id: '2',
+    name: 'Mock Seat Allotment 1',
+    date: new Date('2026-06-20T17:00:00'),
+    type: 'Mock Allotment',
+    description: 'First mock seat allocation based on filled choices',
+    important: false,
+  },
+  {
+    id: '3',
+    name: 'Mock Seat Allotment 2',
+    date: new Date('2026-06-23T17:00:00'),
+    type: 'Mock Allotment',
+    description: 'Second mock seat allocation based on updated choices',
+    important: false,
+  },
+  {
+    id: '4',
+    name: 'Choice Filling Closes',
+    date: new Date('2026-06-25T17:00:00'),
+    type: 'Deadline',
+    description: 'Last date for choice filling and auto-locking of choices',
+    important: true,
+  },
+]
 
 const counselingStages = [
   {
@@ -303,7 +338,7 @@ export default function StrategyPage() {
                     </h2>
                   </div>
                   <div className="p-5 space-y-4">
-                    {deadlines.map((deadline, index) => (
+                    {deadlines.map((deadline: Deadline, index: number) => (
                       <div 
                         key={deadline.id}
                         className="flex items-start gap-3 pb-4 border-b border-border/30 last:border-0 last:pb-0"

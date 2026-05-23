@@ -73,7 +73,7 @@ export interface Mentor {
   id: string
   name: string
   college: string
-  branch: string;
+  branch: string
   company: string
   role: string
   expertise: string[]

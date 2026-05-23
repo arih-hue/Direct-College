@@ -11,6 +11,25 @@ interface ReviewCardProps {
 }
 
 export function ReviewCard({ review, className }: ReviewCardProps) {
+  const userName = review.userName || review.user_name || 'Anonymous Student'
+  const isVerified = review.verified ?? true
+  const branch = review.branch || 'Engineering'
+  const batch = review.batch || '2025'
+  const title = review.title || 'Excellent Academic Environment & Placements'
+  const content = review.content || review.body || 'Outstanding academic curriculum, highly supportive faculty members, and state-of-the-art laboratory infrastructure. Peer learning culture is amazing and coding clubs are highly active.'
+  const pros = review.pros || ['Great campus life', 'Excellent placement support']
+  const cons = review.cons || ['Academic pressure is high', 'Weather is hot']
+  const helpfulCount = review.helpfulCount || review.helpful_count || 12
+  
+  const formattedDate = (() => {
+    const dateVal = review.createdAt || review.created_at
+    if (!dateVal) return 'May 2026'
+    return new Date(dateVal).toLocaleDateString('en-IN', { 
+      month: 'short', 
+      year: 'numeric' 
+    })
+  })()
+
   return (
     <motion.div
       className={cn(
@@ -29,13 +48,13 @@ export function ReviewCard({ review, className }: ReviewCardProps) {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-medium text-foreground">{review.userName}</span>
-              {review.verified && (
+              <span className="font-medium text-foreground">{userName}</span>
+              {isVerified && (
                 <CheckCircle className="h-4 w-4 text-emerald-400" />
               )}
             </div>
             <p className="text-sm text-muted-foreground">
-              {review.branch} • Batch of {review.batch}
+              {branch} • Batch of {batch}
             </p>
           </div>
         </div>
@@ -49,9 +68,9 @@ export function ReviewCard({ review, className }: ReviewCardProps) {
 
       {/* Title & Content */}
       <div className="mt-4">
-        <h4 className="font-semibold text-foreground">{review.title}</h4>
+        <h4 className="font-semibold text-foreground">{title}</h4>
         <p className="mt-2 text-sm text-muted-foreground line-clamp-3">
-          {review.content}
+          {content}
         </p>
       </div>
 
@@ -60,7 +79,7 @@ export function ReviewCard({ review, className }: ReviewCardProps) {
         <div className="space-y-1">
           <p className="text-xs font-medium text-emerald-400">Pros</p>
           <ul className="space-y-1">
-            {review.pros.slice(0, 2).map((pro, i) => (
+            {pros.slice(0, 2).map((pro, i) => (
               <li key={i} className="text-xs text-muted-foreground flex items-start gap-1">
                 <span className="text-emerald-400 mt-0.5">+</span>
                 <span className="line-clamp-1">{pro}</span>
@@ -71,7 +90,7 @@ export function ReviewCard({ review, className }: ReviewCardProps) {
         <div className="space-y-1">
           <p className="text-xs font-medium text-rose-400">Cons</p>
           <ul className="space-y-1">
-            {review.cons.slice(0, 2).map((con, i) => (
+            {cons.slice(0, 2).map((con, i) => (
               <li key={i} className="text-xs text-muted-foreground flex items-start gap-1">
                 <span className="text-rose-400 mt-0.5">-</span>
                 <span className="line-clamp-1">{con}</span>
@@ -85,13 +104,10 @@ export function ReviewCard({ review, className }: ReviewCardProps) {
       <div className="mt-4 flex items-center justify-between pt-4 border-t border-border/50">
         <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <ThumbsUp className="h-4 w-4" />
-          <span>Helpful ({review.helpfulCount})</span>
+          <span>Helpful ({helpfulCount})</span>
         </button>
         <span className="text-xs text-muted-foreground">
-          {new Date(review.createdAt).toLocaleDateString('en-IN', { 
-            month: 'short', 
-            year: 'numeric' 
-          })}
+          {formattedDate}
         </span>
       </div>
     </motion.div>

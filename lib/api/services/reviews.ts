@@ -1,20 +1,27 @@
-import { apiClient } from "../client";
-import type { PaginatedData } from "../types";
-import { unwrapData } from "../unwrap";
+import { supabase } from '@/lib/supabase'
+import type { Review } from '@/types'
 
-export type ReviewListItem = Record<string, unknown>;
+/**
+ * Fetch reviews from Supabase.
+ * Optionally filter by college_id.
+ * Returns [] on error.
+ */
+export async function getReviews(collegeId?: string): Promise<Review[]> {
+  let query = supabase
+    .from('reviews')
+    .select('*')
+    .order('created_at', { ascending: false })
 
-export async function listReviews(params: Record<string, string | number | boolean | undefined>) {
-  const res = await apiClient.get<unknown>("/reviews", { params });
-  return unwrapData<PaginatedData<ReviewListItem>>(res.data);
-}
+  if (collegeId) {
+    query = query.eq('college_id', collegeId)
+  }
 
-export async function createReview(payload: {
-  collegeId: string;
-  rating: number;
-  title?: string;
-  body: string;
-}) {
-  const res = await apiClient.post<unknown>("/reviews", payload);
-  return unwrapData<ReviewListItem>(res.data);
+  const { data, error } = await query
+
+  if (error) {
+    console.error('[getReviews] Supabase error:', error.message)
+    return []
+  }
+
+  return (data as Review[]) ?? []
 }

@@ -1,40 +1,45 @@
-import { apiClient } from "../client";
-import type { PaginatedData } from "../types";
-import { unwrapData } from "../unwrap";
-
-export type CollegeListItem = {
-  id: string;
-  name: string;
-  slug: string;
-  city: string | null;
-  state: string | null;
-  country: string;
-  type: string | null;
-  createdAt?: string;
-};
-
-export type CollegeListParams = Record<string, string | number | boolean | undefined>;
-
-export async function listColleges(params: CollegeListParams = {}) {
-  const res = await apiClient.get<unknown>("/colleges", { params });
-  return unwrapData<PaginatedData<CollegeListItem>>(res.data);
-}
-
-export async function getCollege(identifier: string) {
-  const res = await apiClient.get<unknown>(`/colleges/${encodeURIComponent(identifier)}`);
-  return unwrapData<CollegeListItem & Record<string, unknown>>(res.data);
-}
 import { supabase } from '@/lib/supabase'
+import type { College } from '@/types'
 
-export async function getColleges() {
+export type CollegeListItem = College
+
+export type CollegeListParams = Record<string, string | number | boolean | undefined>
+
+/**
+ * Fetch all colleges from Supabase.
+ * Returns [] on error.
+ */
+export async function getColleges(): Promise<College[]> {
   const { data, error } = await supabase
     .from('colleges')
     .select('*')
+    .order('nirf_rank', { ascending: true, nullsFirst: false })
 
   if (error) {
-    console.error(error)
+    console.error('[getColleges] Supabase error:', error.message)
     return []
   }
 
-  return data
+  return (data as College[]) ?? []
+}
+
+/**
+ * Fetch a single college by its id or slug.
+ * Returns null on error or not found.
+ */
+export async function getCollegeById(id: string): Promise<College | null> {
+  // Try matching by UUID id first, then by slug
+  const { data, error } = await supabase
+    .from('colleges')
+    .select('*')
+    .or(`id.eq.${id},slug.eq.${id}`)
+    .limit(1)
+    .maybeSingle()
+
+  if (error) {
+    console.error('[getCollegeById] Supabase error:', error.message)
+    return null
+  }
+
+  return (data as College | null) ?? null
 }
